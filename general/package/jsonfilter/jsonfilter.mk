@@ -4,14 +4,17 @@
 #
 ################################################################################
 
-# JSONFILTER_VERSION = cdc760c58077f44fc40adbbe41e1556a67c1b9a9
-JSONFILTER_VERSION = c7e938d6582a436dddc938539e72dd1320625c54
-JSONFILTER_SITE = git://git.openwrt.org/project/jsonpath.git
-JSONFILTER_LICENSE = ISC, BSD-3-Clause
+ifeq ($(LOCAL_DOWNLOAD),y)
+JSONFILTER_SITE_METHOD = git
+JSONFILTER_SITE = https://github.com/openwrt/jsonpath
+JSONFILTER_VERSION = $(shell git ls-remote $(JSONFILTER_SITE) HEAD | head -1 | cut -f1)
+else
+JSONFILTER_SITE = https://github.com/openwrt/jsonpath/archive
+JSONFILTER_SOURCE = master.tar.gz
+endif
 
-JSONFILTER_DEPENDENCIES = \
-    $(if $(BR2_PACKAGE_JSON_C_OPENIPC),json-c-openipc) \
-    $(if $(BR2_PACKAGE_LIBUBOX),libubox)
+JSONFILTER_LICENSE = ISC, BSD-3-Clause
+JSONFILTER_DEPENDENCIES = json-c libubox
 
 define JSONFILTER_INSTALL_TARGET_CMDS
     install -m 0755 -D $(@D)/jsonpath $(TARGET_DIR)/usr/bin/jsonfilter

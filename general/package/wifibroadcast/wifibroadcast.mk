@@ -3,13 +3,14 @@
 # wifibroadcast
 #
 ################################################################################
-WIFIBROADCAST_VERSION = 23.01
+
+WIFIBROADCAST_VERSION = 23.08
 WIFIBROADCAST_SITE = $(call github,svpcom,wfb-ng,wfb-ng-$(WIFIBROADCAST_VERSION))
 WIFIBROADCAST_LICENSE = GPL-2.0
 
-WIFIBROADCAST_FPATH = air
-ifeq ($(OPENIPC_FAMILY),hi3536dv100)
-	WIFIBROADCAST_FPATH = gs
+WIFIBROADCAST_UNIT = drone
+ifeq ($(OPENIPC_SOC_FAMILY),hi3536dv100)
+	WIFIBROADCAST_UNIT = gs
 endif
 
 WIFIBROADCAST_DEPENDENCIES += libpcap libsodium iw
@@ -19,7 +20,7 @@ WIFIBROADCAST_MAKE_OPTS = \
 	CXX="$(TARGET_CXX)"
 
 define WIFIBROADCAST_BUILD_CMDS
-	$(MAKE) $(WIFIBROADCAST_MAKE_OPTS) -C $(@D) all
+	$(MAKE) $(WIFIBROADCAST_MAKE_OPTS) -C $(@D) all_bin
 endef
 
 define WIFIBROADCAST_INSTALL_TARGET_CMDS
@@ -28,10 +29,12 @@ define WIFIBROADCAST_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 0755 -D $(@D)/wfb_keygen $(TARGET_DIR)/usr/bin
 
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/etc
-	cp $(WIFIBROADCAST_PKGDIR)/files/$(WIFIBROADCAST_FPATH)/wfb.conf $(TARGET_DIR)/etc
-
+	cp $(WIFIBROADCAST_PKGDIR)/files/wfb_$(WIFIBROADCAST_UNIT).conf $(TARGET_DIR)/etc/wfb.conf
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/usr/bin
-	cp $(WIFIBROADCAST_PKGDIR)/files/$(WIFIBROADCAST_FPATH)/wifibroadcast $(TARGET_DIR)/usr/bin
+	cp $(WIFIBROADCAST_PKGDIR)/files/wifibroadcast $(TARGET_DIR)/usr/bin
+
+	$(INSTALL) -m 755 -d $(TARGET_DIR)/etc
+	cp $(WIFIBROADCAST_PKGDIR)/files/$(WIFIBROADCAST_UNIT).key $(TARGET_DIR)/etc/$(WIFIBROADCAST_UNIT).key
 
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/usr/bin
 	cp $(WIFIBROADCAST_PKGDIR)/files/setmcs $(TARGET_DIR)/usr/bin

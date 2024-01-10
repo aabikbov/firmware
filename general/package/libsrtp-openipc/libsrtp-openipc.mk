@@ -4,10 +4,13 @@
 #
 ################################################################################
 
-LIBSRTP_OPENIPC_VERSION = bd0f27ec0e299ad101a396dde3f7c90d48efc8fc
-LIBSRTP_OPENIPC_SITE = https://github.com/cisco/libsrtp.git
 LIBSRTP_OPENIPC_SITE_METHOD = git
+LIBSRTP_OPENIPC_SITE = https://github.com/cisco/libsrtp
+LIBSRTP_OPENIPC_VERSION = $(shell git ls-remote $(LIBSRTP_OPENIPC_SITE) HEAD | head -1 | cut -f1)
+
 LIBSRTP_OPENIPC_INSTALL_STAGING = YES
+LIBSRTP_OPENIPC_SUPPORTS_IN_SOURCE_BUILD = NO
+
 LIBSRTP_OPENIPC_LICENSE = BSD-3-Clause
 LIBSRTP_OPENIPC_LICENSE_FILES = LICENSE
 LIBSRTP_OPENIPC_CPE_ID_VENDOR = cisco

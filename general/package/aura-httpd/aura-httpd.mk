@@ -4,8 +4,15 @@
 #
 ################################################################################
 
-AURA_HTTPD_VERSION = 251c0e110717cfbd25346161a41fa9aef7c801dd
-AURA_HTTPD_SITE = $(call github,nekromant,aura-httpd,$(AURA_HTTPD_VERSION))
+ifeq ($(LOCAL_DOWNLOAD),y)
+AURA_HTTPD_SITE_METHOD = git
+AURA_HTTPD_SITE = https://github.com/nekromant/aura-httpd
+AURA_HTTPD_VERSION = $(shell git ls-remote $(AURA_HTTPD_SITE) HEAD | head -1 | cut -f1)
+else
+AURA_HTTPD_SITE = https://github.com/nekromant/aura-httpd/archive
+AURA_HTTPD_SOURCE = master.tar.gz
+endif
+
 AURA_HTTPD_LICENSE = MIT
 AURA_HTTPD_LICENSE_FILES = LICENSE
 

@@ -1,5 +1,0 @@
-config BR2_PACKAGE_VENDOR_PATCHER
-	bool "vendor patcher"
-	default y if BR2_LINUX_KERNEL
-	help
-	  Linux patcher for OpenIPC

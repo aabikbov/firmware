@@ -75,7 +75,7 @@ fi
 
 lsmod | grep "audio" >/dev/null
 if [ $? -ne 0 ]; then
-	insmod ${KMOD_PATH/%\//}/audio.ko
+	insmod ${KMOD_PATH/%\//}/audio.ko spk_gpio=-1
 	check_return "insmod audio"
 fi
 
@@ -90,6 +90,6 @@ if [ ! -z "$(lsmod | grep "gpio")" ]; then
 	for GPIO in $(echo ${GPIOS})
 	do
 	  G=$(cli -g ${GPIO})
-	  [ ! -z "${G}" ] && echo ${G} > /proc/jz/claim/gpio
+	  [ ! -z "${G}" ] && echo ${G} > /proc/gpio_claim/gpio
 	done
 fi

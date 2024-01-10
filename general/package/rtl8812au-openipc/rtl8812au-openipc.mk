@@ -3,8 +3,16 @@
 # rtl8812au-openipc
 #
 ################################################################################
-RTL8812AU_OPENIPC_VERSION = 3a57ac0a3ebd6d1f4ab9ef994a429c83df4b133a
-RTL8812AU_OPENIPC_SITE = $(call github,svpcom,rtl8812au,$(RTL8812AU_OPENIPC_VERSION))
+
+ifeq ($(LOCAL_DOWNLOAD),y)
+RTL8812AU_OPENIPC_SITE_METHOD = git
+RTL8812AU_OPENIPC_SITE = https://github.com/svpcom/rtl8812au
+RTL8812AU_OPENIPC_VERSION = $(shell git ls-remote $(RTL8812AU_OPENIPC_SITE) HEAD | head -1 | cut -f1)
+else
+RTL8812AU_OPENIPC_SITE = https://github.com/svpcom/rtl8812au/archive
+RTL8812AU_OPENIPC_SOURCE = master.tar.gz
+endif
+
 RTL8812AU_OPENIPC_LICENSE = GPL-2.0
 RTL8812AU_OPENIPC_LICENSE_FILES = COPYING
 

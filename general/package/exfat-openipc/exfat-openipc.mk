@@ -4,8 +4,10 @@
 #
 ################################################################################
 
-EXFAT_OPENIPC_VERSION = 7f592ba5718e3e757cd0edd2d934fe2fe87f7d61
-EXFAT_OPENIPC_SITE = $(call github,namjaejeon,linux-exfat-oot,$(EXFAT_OPENIPC_VERSION))
+EXFAT_OPENIPC_SITE_METHOD = git
+EXFAT_OPENIPC_SITE = https://github.com/namjaejeon/linux-exfat-oot
+EXFAT_OPENIPC_VERSION = 8279a1a0bc27b03565da6775454e09a520b13a09
+
 EXFAT_OPENIPC_LICENSE = GPL-2.0
 EXFAT_OPENIPC_LICENSE_FILES = COPYING
 

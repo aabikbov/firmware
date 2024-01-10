@@ -1,11 +1,18 @@
 ################################################################################
 #
-# microsnander | updated 2022.08.13
+# microsnander
 #
 ################################################################################
 
-MICROSNANDER_VERSION = 17ad43fe93126fcff5135c54d7d375f5dd901387
-MICROSNANDER_SITE = $(call github,openipc,microsnander,$(MICROSNANDER_VERSION))
+ifeq ($(LOCAL_DOWNLOAD),y)
+MICROSNANDER_SITE_METHOD = git
+MICROSNANDER_SITE = https://github.com/openipc/microsnander
+MICROSNANDER_VERSION = $(shell git ls-remote $(MICROSNANDER_SITE) HEAD | head -1 | cut -f1)
+else
+MICROSNANDER_SITE = https://github.com/openipc/microsnander/archive
+MICROSNANDER_SOURCE = master.tar.gz
+endif
+
 MICROSNANDER_LICENSE = MIT
 MICROSNANDER_LICENSE_FILES = LICENSE
 

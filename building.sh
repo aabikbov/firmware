@@ -97,7 +97,7 @@ clone() {
 }
 
 fresh() {
-  BR_VER=$1
+  BR_VER=2023.02.7
 
   if [ -d "$SRC_CACHE_DIR" ]; then
     echo_c 36 "Found cache directory."
@@ -127,7 +127,7 @@ fresh() {
   fi
 
   echo_c 34 "Downloading Buildroot sources to cache directory ..."
-  log_and_run "curl --continue-at - --output ${SRC_CACHE_DIR}/buildroot-${BR_VER}.tar.gz https://buildroot.org/downloads/buildroot-${BR_VER}.tar.gz"
+  log_and_run "curl --output ${SRC_CACHE_DIR}/buildroot-${BR_VER}.tar.gz https://buildroot.org/downloads/buildroot-${BR_VER}.tar.gz"
   echo_c 34 "Done.\n"
 
   echo_c 34 "Extracting a fresh copy of Buildroot from Buildroot sources ..."
@@ -159,7 +159,7 @@ should_fit() {
 }
 
 rename() {
-  if grep -q ultimate_defconfig ./output/.config || grep -q sdcard_defconfig ./output/.config; then
+  if grep -q 'BR2_OPENIPC_FLASH_SIZE="16"' ./output/.config; then
     should_fit uImage $MAX_KERNEL_SIZE_ULTIMATE
     should_fit rootfs.squashfs $MAX_ROOTFS_SIZE_ULTIMATE
   else
@@ -212,21 +212,22 @@ copy_function() {
 uni_build() {
   [ -z "$BOARD" ] && BOARD=$FUNCNAME
 
-  SOC=$(echo $BOARD | cut -d '_' -f 1)
+  SOC=$(echo $BOARD | cut -sd '_' -f 1)
+  FLAVOR=$(echo $BOARD | cut -sd '_' -f 2)
 
   set -e
-  if [ "$(echo $BOARD | cut -sd '_' -f 2)" == "" ]; then
-    BOARD="${BOARD}_lite"
+  if [ "${FLAVOR}" == "" ]; then
+    BOARD="${SOC}_lite"
   fi
 
-  if [ "$BOARD" == "hi3518ev200_lite" ]; then
+  if [ "${SOC}_${FLAVOR}" == "hi3518ev200_lite" ]; then
     NEED_AUTOUP=1
   fi
 
   echo_c 33 "\n  SoC: $SOC\nBoard: $BOARD\n"
 
   if [ "all" = "${COMMAND}" ]; then
-    fresh $(make BOARD=${BOARD} buildroot-version)
+    fresh $(make BOARD=${BOARD})
   fi
 
   log_and_run "make BOARD=${BOARD} ${COMMAND}"

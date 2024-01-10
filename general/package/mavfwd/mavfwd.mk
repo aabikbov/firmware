@@ -4,9 +4,10 @@
 #
 ################################################################################
 
-# MAVFWD_VERSION = $(shell git ls-remote https://github.com/OpenIPC/mavfwd/ master | awk '{ print $$1 }')
-MAVFWD_VERSION = 220d30e118d26008e94445887a03d77ba73c2d29
-MAVFWD_SITE = $(call github,OpenIPC,mavfwd,$(MAVFWD_VERSION))
+MAVFWD_SITE_METHOD = git
+MAVFWD_SITE = https://github.com/openipc/mavfwd
+MAVFWD_VERSION = c95613e241e03782fc6acc4780e60d8b4316a736
+
 MAVFWD_LICENSE = MIT
 MAVFWD_LICENSE_FILES = LICENSE
 
@@ -17,8 +18,11 @@ define MAVFWD_BUILD_CMDS
 endef
 
 define MAVFWD_INSTALL_TARGET_CMDS
+    $(INSTALL) -m 755 -d $(TARGET_DIR)/usr/bin
+    $(INSTALL) -m 0755 -D $(@D)/mavfwd $(TARGET_DIR)/usr/bin/mavfwd
+
     $(INSTALL) -m 755 -d $(TARGET_DIR)/usr/sbin
-    $(INSTALL) -m 0755 -D $(@D)/mavfwd $(TARGET_DIR)/usr/sbin/mavfwd
+    cp $(MAVFWD_PKGDIR)/files/channels.sh $(TARGET_DIR)/usr/sbin
 endef
 
 $(eval $(generic-package))

@@ -4,8 +4,10 @@
 #
 ################################################################################
 
-LIBEVENT_OPENIPC_VERSION = fe9dc8f
-LIBEVENT_OPENIPC_SITE = $(call github,libevent,libevent,$(LIBEVENT_OPENIPC_VERSION))
+LIBEVENT_OPENIPC_SITE_METHOD = git
+LIBEVENT_OPENIPC_SITE = https://github.com/libevent/libevent
+LIBEVENT_OPENIPC_VERSION = fe9dc8f614db0520027e8e2adb95769193d4f0a3
+
 LIBEVENT_OPENIPC_INSTALL_STAGING = YES
 LIBEVENT_OPENIPC_LICENSE = BSD-3-Clause, OpenBSD
 LIBEVENT_OPENIPC_LICENSE_FILES = LICENSE
