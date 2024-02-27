@@ -4,25 +4,18 @@
 #
 ################################################################################
 
-ifeq ($(LOCAL_DOWNLOAD),y)
-WEBUI_SITE_METHOD = git
-WEBUI_SITE = https://github.com/openipc/webui
-WEBUI_VERSION = $(shell git ls-remote $(WEBUI_SITE) HEAD | head -1 | cut -f1)
-else
-WEBUI_SITE = https://github.com/openipc/webui/archive
-WEBUI_SOURCE = master.tar.gz
-endif
+WEBUI_SITE = $(call github,openipc,webui,$(WEBUI_VERSION))
+WEBUI_VERSION = master
 
 WEBUI_LICENSE = MIT
 WEBUI_LICENSE_FILES = LICENSE
 
 define WEBUI_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/etc
-	cp $(WEBUI_PKGDIR)/files/httpd.conf $(TARGET_DIR)/etc
+	$(INSTALL) -m 644 -t $(TARGET_DIR)/etc $(WEBUI_PKGDIR)/files/etc/*
 
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/etc/init.d
-	cp $(WEBUI_PKGDIR)/files/S50httpd $(TARGET_DIR)/etc/init.d
-	cp -rv $(@D)/files/etc/init.d/* $(TARGET_DIR)/etc/init.d
+	$(INSTALL) -m 755 -t $(TARGET_DIR)/etc/init.d $(WEBUI_PKGDIR)/files/init.d/*
 
 	$(INSTALL) -m 755 -d $(TARGET_DIR)/usr
 	cp -rv $(@D)/files/usr/sbin $(TARGET_DIR)/usr
