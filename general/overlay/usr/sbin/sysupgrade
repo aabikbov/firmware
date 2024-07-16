@@ -3,7 +3,7 @@
 # OpenIPC.org | 2024
 #
 
-scr_version=1.0.38
+scr_version=1.0.40
 
 args=" $@"
 
@@ -21,6 +21,7 @@ echo_c() {
 die() {
 	echo_c 31 "$1 Aborting."
 	reboot_system
+	exit 1
 }
 
 check_soc() {
@@ -101,18 +102,17 @@ download_firmware() {
 
 free_resources() {
 	echo_c 37 "\nStop services, sync files, free up memory"
-	if [ "$vendor" = "sigmastar" ]; then
-		killall -q -3 majestic
-		sleep 1
-	else
-		kill_process majestic
-	fi
-	for proc in crond klogd ntpd rngd syslogd; do
-		kill_process $proc
-	done
+	killall -q -3 majestic
+  sleep 1
+	/etc/init.d/S60crond stop
+	/etc/init.d/S49ntpd stop
+	/etc/init.d/S21rngd stop
+	/etc/init.d/S02klogd stop
+	/etc/init.d/S01syslogd stop
+	sleep 1
+
 	sync
 	echo 3 > /proc/sys/vm/drop_caches
-
 	echo_c 34 "\nUptime:"
 	uptime
 	echo_c 34 "\nMemory:"
@@ -121,21 +121,11 @@ free_resources() {
 	ps | grep -v '\['
 }
 
-kill_process() {
-	echo -n "Killing $1 "
-	while [ -n "$(pidof $1)" ]; do
-		killall -q $1
-		sleep 0.1
-		echo -n "."
-	done
-	echo ". OK"
-}
-
 set_progress() {
 	if [ "1" = "$silent_update" ]; then
-		busybox $@ | awk '{print NR, $1}'
+		busybox "$@" | awk '{print NR, $1}'
 	else
-		busybox $@
+		busybox "$@"
 	fi
 }
 
@@ -233,7 +223,6 @@ Usage: $0 [options]
 Where:
   -k                   Update kernel from online repository.
   -r                   Update rootfs from online repository.
-  -w                   Update Web UI to development version.
   -d                   Update firmware from development branch.
       --url=[URL]      Custom URL to update from (.tgz format).
       --kernel=[FILE]  Update kernel from file (uImage format).
@@ -338,11 +327,6 @@ for i in "$@"; do
 			shift
 			;;
 
-		-w)
-			update_webui=1
-			shift
-			;;
-
 		-x | --no_reboot)
 			skip_reboot=1
 			shift
@@ -367,20 +351,10 @@ print_sysinfo
 [ "1" != "$clear_overlay" ] &&
 [ "1" != "$update_kernel" ] &&
 [ "1" != "$update_rootfs" ] &&
-[ "1" != "$update_webui" ] &&
 	echo_c 37 "\nTry '$(basename "$0") --help' for options." &&
 	exit 0
 
 [ "1" != "$skip_selfupdate" ] && self_update
-
-if [ "1" = "$update_webui" ]; then
-	if [ "1" = "$update_rootfs" ]; then
-		update_webui=0
-		echo_c 31 "\nCannot update Web UI along with RootFS!"
-		echo_c 37 "Please update RootFS then reboot the camera and re-run $0 -w to update Web UI in a separate run."
-		sleep 5
-	fi
-fi
 
 create_lock
 free_resources
@@ -390,7 +364,6 @@ free_resources
 [ "1" = "$update_kernel" ] && do_update_kernel "$kernel_file"
 [ "1" = "$update_rootfs" ] && do_update_rootfs "$rootfs_file"
 [ "1" = "$clear_overlay" ] && do_wipe_overlay
-[ "1" = "$update_webui" ] && updatewebui.sh -b dev
 
 reboot_system
 

@@ -5,12 +5,6 @@ set_gpio() {
 	sleep 1
 }
 
-# Generic ATBM603x USB
-if [ "$1" = "atbm603x-generic-usb" ]; then
-	modprobe atbm603x_wifi_usb
-	exit 0
-fi
-
 # Generic MT7601U
 if [ "$1" = "mt7601u-generic" ]; then
 	modprobe mt7601u
@@ -35,6 +29,18 @@ if [ "$1" = "rtl8733bu-generic" ]; then
 	exit 0
 fi
 
+# Generic RTL8812AU
+if [ "$1" = "rtl8812au-generic" ]; then
+	modprobe 88XXau rtw_ht_enable=0 rtw_led_enable=0
+	exit 0
+fi
+
+# Generic ATBM603x
+if [ "$1" = "atbm603x-generic-usb" ]; then
+	modprobe atbm603x_wifi_usb
+	exit 0
+fi
+
 # GK7205V200 CamHi
 if [ "$1" = "mt7601u-gk7205v200-camhi" ]; then
 	set_gpio 9 0
@@ -45,6 +51,13 @@ fi
 # GK7205V200 CamHi
 if [ "$1" = "rtl8733bu-gk7205v200-camhi" ]; then
 	set_gpio 9 0
+	modprobe 8733bu
+	exit 0
+fi
+
+# GK7205V300 CamHi
+if [ "$1" = "rtl8733bu-gk7205v300-camhi" ]; then
+	set_gpio 7 0
 	modprobe 8733bu
 	exit 0
 fi
@@ -106,6 +119,13 @@ if [ "$1" = "rtl8188fu-hi3518ev300-unknown1" ]; then
 	exit 0
 fi
 
+# HI3518EV300 t5810hct-m02
+if [ "$1" = "rtl8188fu-hi3518ev300-t5810hct-m02" ]; then
+	set_gpio 40 1
+	modprobe 8188fu
+	exit 0
+fi
+
 # SSC325DE IMOU C22EP-S2
 if [ "$1" = "rtl8188fu-ssc325de-imou-c22ep-s2" ]; then
 	set_gpio 62 1
@@ -113,7 +133,14 @@ if [ "$1" = "rtl8188fu-ssc325de-imou-c22ep-s2" ]; then
 	exit 0
 fi
 
-# SSC3333 Meari Speed 6S
+# SSC333 Babysense See HD IP206
+if [ "$1" = "rtl8188fu-babysense-see-hd-ip206" ]; then
+	set_gpio 14 1
+	modprobe 8188fu
+	exit 0
+fi
+
+# SSC333 Meari Speed 6S
 if [ "$1" = "rtl8188fu-ssc333-meari-speed-6s" ]; then
 	set_gpio 14 1
 	modprobe 8188fu
@@ -155,7 +182,7 @@ if [ "$1" = "rtl8188fu-ssc337de-foscam" ]; then
 fi
 
 # SSC377 Dahua
-if [ "$1" = "ssv6x5x-ssc337-dahua" ]; then
+if [ "$1" = "ssv6x5x-ssc377-dahua" ]; then
 	set_gpio 10 1
 	modprobe ssv6x5x
 	exit 0
@@ -189,6 +216,13 @@ if [ "$1" = "rtl8188fu-t31-aoni-ep01j05" ]; then
 	exit 0
 fi
 
+# T31 Aosu C5L
+if [ "$1" = "rtl8188fu-t31-aosu-c5l" ]; then
+	set_gpio 43 0
+	modprobe 8188fu
+	exit 0
+fi
+
 # T31 CamHi
 if [ "$1" = "mt7601u-t31-camhi" ]; then
 	set_gpio 61 0
@@ -203,17 +237,24 @@ if [ "$1" = "rtl8733bu-t31-camhipro" ]; then
 	exit 0
 fi
 
+# T31 iFlytek
+if [ "$1" = "ssv6155-t31-iflytek" ]; then
+	set_gpio 10 1
+	modprobe ssv6155
+	exit 0
+fi
+
+# T31 iFlytek XFP301-M
+if [ "$1" = "rtl8188fu-t31-iflytek-xfp301m" ]; then
+	set_gpio 10 1
+	modprobe 8188fu
+	exit 0
+fi
+
 # T31 ZTE K540
 if [ "$1" = "atbm603x-t31-zte-k540" ]; then
 	set_gpio 51 0
 	modprobe atbm603x_wifi_usb
-	exit 0
-fi
-
-# SSC333 Babysense See HD IP206
-if [ "$1" = "rtl8188fu-babysense-see-hd-ip206" ]; then
-	set_gpio 14 1
-	modprobe 8188fu
 	exit 0
 fi
 

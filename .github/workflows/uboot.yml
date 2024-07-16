@@ -1,0 +1,34 @@
+name: uboot
+on:
+  workflow_dispatch:
+
+jobs:
+  toolchain:
+    name: Uboot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare
+        run: |
+          sudo apt-get update
+          sudo apt-get install gcc-arm-linux-gnueabi gcc-mipsel-linux-gnu u-boot-tools lzop
+
+      - name: Ingenic
+        run: |
+          git clone https://github.com/openipc/u-boot-ingenic.git --depth 1
+          cd u-boot-ingenic
+          bash build.sh
+
+      - name: Sigmastar
+        run: |
+          git clone https://github.com/openipc/u-boot-sigmastar.git --depth 1
+          cd u-boot-sigmastar
+          bash build.sh
+
+      - name: Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          files: |
+            u-boot-ingenic/output/*-nor.bin
+            u-boot-sigmastar/output/*-nor.bin
+            u-boot-sigmastar/output/*-nand.bin

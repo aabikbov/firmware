@@ -1,0 +1,8 @@
+config BR2_PACKAGE_RUBYFPV
+	bool "rubyfpv"
+        select BR2_PACKAGE_IW
+	default n
+	help
+	  Ruby package
+
+	  https://rubyfpv.com

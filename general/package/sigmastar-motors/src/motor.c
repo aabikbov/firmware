@@ -5,27 +5,32 @@
 #include <string.h>
 #include <unistd.h>
 #include <linux/gpio.h>
+#include <sys/file.h>
 #include <sys/ioctl.h>
 
 #define DEV_NAME "/dev/gpiochip0"
-#define STEP_TIME 250
-#define STEP_COUNT 4
-#define MAX_COUNT 8
+#define STEP_TIME 1000
+#define STEP_COUNT 20
 #define SEQ_COUNT 8
 
-int device_x5[] = {01, 02, 12, 13, 62, 63, 64, 65};
+typedef struct {
+	const char *name;
+	int gpio_x[4];
+	int gpio_y[4];
+} config;
 
-int gpio_x[4];
-int gpio_y[4];
-
-int sequence[][4] = {
-	{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 1, 0},
-	{0, 0, 1, 0}, {0, 0, 1, 1}, {0, 0, 0, 1}, {1, 0, 0, 1},
-	{1, 0, 0, 1}, {0, 0, 0, 1}, {0, 0, 1, 1}, {0, 0, 1, 0},
-	{0, 1, 1, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {1, 0, 0, 0},
+static config list[] = {
+	{ "ssc337de-foscam", { 01, 02, 12, 13 }, { 62, 63, 64, 65 }, },
 };
 
-int write_gpio(int pin, int val) {
+static int sequence[][4] = {
+	{ 1, 0, 0, 0 }, { 1, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 1, 1, 0 },
+	{ 0, 0, 1, 0 }, { 0, 0, 1, 1 }, { 0, 0, 0, 1 }, { 1, 0, 0, 1 },
+	{ 1, 0, 0, 1 }, { 0, 0, 0, 1 }, { 0, 0, 1, 1 }, { 0, 0, 1, 0 },
+	{ 0, 1, 1, 0 }, { 0, 1, 0, 0 }, { 1, 1, 0, 0 }, { 1, 0, 0, 0 },
+};
+
+static int write_gpio(int pin, int val) {
 	struct gpiohandle_request rq;
 	struct gpiohandle_data data;
 
@@ -57,12 +62,13 @@ int write_gpio(int pin, int val) {
 	return 0;
 }
 
-int motor_control(int *gpio, int count) {
+static int motor_control(int *gpio, int count) {
 	for (int i = count; i < count + SEQ_COUNT; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (write_gpio(gpio[j], sequence[i][j])) {
 				return 1;
 			}
+
 			usleep(STEP_TIME);
 		}
 	}
@@ -70,7 +76,7 @@ int motor_control(int *gpio, int count) {
 	return 0;
 }
 
-int gpio_export(int *gpio) {
+static int gpio_export(int *gpio) {
 	for (int i = 0; i < 4; i++) {
 		if (write_gpio(gpio[i], 0)) {
 			return 1;
@@ -80,49 +86,65 @@ int gpio_export(int *gpio) {
 	return 0;
 }
 
-int limit_value(int x) {
-	if (x < -MAX_COUNT) {
-		x = -MAX_COUNT;
-	}
-
-	if (x > MAX_COUNT) {
-		x = MAX_COUNT;
-	}
-
-	return x;
-}
-
 int main(int argc, char **argv) {
-	if (argc < 2 || argc > 3) {
-		printf("Usage: %s [x_step] [y_step]\n", argv[0]);
+	if (argc < 3 || argc > 4) {
+		printf("Usage: %s [device] [x_step] [y_step]\n", argv[0]);
 		return -1;
 	}
 
-	int x = limit_value(argv[1] ? atoi(argv[1]) : 0);
-	int y = limit_value(argv[2] ? atoi(argv[2]) : 0);
-
-	memcpy(gpio_x, device_x5 + 0, sizeof(gpio_x));
-	memcpy(gpio_y, device_x5 + 4, sizeof(gpio_y));
-
-	if (gpio_export(gpio_x) || gpio_export(gpio_y)) {
-		return -1;
-	}
-
-	for (int i = 0; i < abs(x) * STEP_COUNT * 2; i++) {
-		if (motor_control(gpio_x, (x < 0) ? SEQ_COUNT : 0)) {
-			goto reset;
+	int dev = -1;
+	for (int i = 0; i < sizeof(list) / sizeof(config); i++) {
+		if (strstr(argv[1], list[i].name)) {
+			dev = i;
+			break;
 		}
 	}
 
-	for (int i = 0; i < abs(y) * STEP_COUNT; i++) {
-		if (motor_control(gpio_y, (y < 0) ? 0 : SEQ_COUNT)) {
-			goto reset;
+	if (dev < 0) {
+		printf("Device not supported\n");
+		return -1;
+	}
+
+	int pid = open("/var/run/motor.pid", O_RDWR | O_CREAT, 0644);
+	if (flock(pid, LOCK_EX | LOCK_NB)) {
+		printf("Control in progress\n");
+		close(pid);
+		return -1;
+	}
+
+	int x = argv[2] ? atoi(argv[2]) : 0;
+	int y = argv[3] ? atoi(argv[3]) : 0;
+
+	if (gpio_export(list[dev].gpio_x) || gpio_export(list[dev].gpio_y)) {
+		close(pid);
+		return -1;
+	}
+
+	int count_x = abs(x) ? STEP_COUNT : 0;
+	int count_y = abs(y) ? STEP_COUNT : 0;
+
+	while (count_x || count_y) {
+		if (count_x) {
+			if (motor_control(list[dev].gpio_x, (x < 0) ? SEQ_COUNT : 0)) {
+				goto reset;
+			}
+
+			count_x--;
+		}
+
+		if (count_y) {
+			if (motor_control(list[dev].gpio_y, (y < 0) ? 0 : SEQ_COUNT)) {
+				goto reset;
+			}
+
+			count_y--;
 		}
 	}
 
 reset:
-	gpio_export(gpio_x);
-	gpio_export(gpio_y);
+	gpio_export(list[dev].gpio_x);
+	gpio_export(list[dev].gpio_y);
+	close(pid);
 
 	return 0;
 }

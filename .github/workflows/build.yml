@@ -3,16 +3,12 @@ on:
   pull_request:
     branches:
       - master
-  push:
-    branches:
-      - master
+  schedule:
+    - cron: '30 23 * * *'
   workflow_dispatch:
 
 env:
   TAG_NAME: latest
-  TG_TOKEN: ${{secrets.TELEGRAM_TOKEN_BOT_OPENIPC}}
-  TG_CHANNEL: ${{secrets.TELEGRAM_CHANNEL_OPENIPC_DEV}}
-  TG_OPTIONS: -s -o /dev/null -w %{http_code}
 
 jobs:
   buildroot:
@@ -41,14 +37,18 @@ jobs:
 
           # Sigmastar [I6C]
           - {"platform": "ssc377", "release": "lite"}
+          - {"platform": "ssc377de", "release": "lite"}
+          - {"platform": "ssc378de", "release": "lite"}
 
           # Sigmastar [I6E]
           - {"platform": "ssc30kd", "release": "lite"}
           - {"platform": "ssc30kd", "release": "ultimate"}
           - {"platform": "ssc30kq", "release": "fpv"}
+          - {"platform": "ssc30kq", "release": "rubyfpv"}
           - {"platform": "ssc30kq", "release": "lite"}
           - {"platform": "ssc30kq", "release": "ultimate"}
           - {"platform": "ssc338q", "release": "fpv"}
+          - {"platform": "ssc338q", "release": "rubyfpv"}
           - {"platform": "ssc338q", "release": "lite"}
           - {"platform": "ssc338q", "release": "ultimate"}
 
@@ -129,14 +129,17 @@ jobs:
           - {"platform": "gk7202v300", "release": "lite"}
           - {"platform": "gk7205v200", "release": "lte"}
           - {"platform": "gk7205v200", "release": "fpv"}
+          - {"platform": "gk7205v200", "release": "rubyfpv"}
           - {"platform": "gk7205v200", "release": "venc"}
           - {"platform": "gk7205v200", "release": "lite"}
           - {"platform": "gk7205v200", "release": "ultimate"}
           - {"platform": "gk7205v210", "release": "fpv"}
+          - {"platform": "gk7205v210", "release": "rubyfpv"}
           - {"platform": "gk7205v210", "release": "venc"}
           - {"platform": "gk7205v210", "release": "lite"}
           - {"platform": "gk7205v300", "release": "lte"}
           - {"platform": "gk7205v300", "release": "fpv"}
+          - {"platform": "gk7205v300", "release": "rubyfpv"}
           - {"platform": "gk7205v300", "release": "venc"}
           - {"platform": "gk7205v300", "release": "lite"}
           - {"platform": "gk7205v300", "release": "ultimate"}
@@ -166,28 +169,25 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Prepare firmware
+        run: |
+          echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+          echo CACHE_DATE=$(date +%m) >> ${GITHUB_ENV}
+          make BOARD=${{matrix.platform}}_${{matrix.release}} br-source
+
       - name: Setup ccache
         if: github.event_name != 'pull_request'
         uses: actions/cache@v4
         with:
           path: /tmp/ccache
-          key: ${{matrix.platform}}_${{matrix.release}}
+          key: ${{matrix.platform}}_${{matrix.release}}-${{env.CACHE_DATE}}
 
       - name: Restore ccache
         if: github.event_name == 'pull_request'
         uses: actions/cache/restore@v4
         with:
           path: /tmp/ccache
-          key: ${{matrix.platform}}_${{matrix.release}}
-
-      - name: Download files
-        run: |
-          echo "8.8.8.8 invisible-mirror.net" | sudo tee -a /etc/hosts
-          echo "8.8.8.8 distfiles.dereferenced.org" | sudo tee -a /etc/hosts
-          make prepare
-          git clone https://github.com/openipc/br-cache
-          ln -s ${GITHUB_WORKSPACE}/br-cache $(ls -d output/buildroot-*)/dl
-          make BOARD=${{matrix.platform}}_${{matrix.release}} br-source
+          key: ${{matrix.platform}}_${{matrix.release}}-${{env.CACHE_DATE}}
 
       - name: Build firmware
         run: |
@@ -198,7 +198,7 @@ jobs:
 
           mkdir -p /tmp/ccache
           ln -s /tmp/ccache ${HOME}/.ccache
-          make BOARD=${{matrix.platform}}_${{matrix.release}} all
+          make BOARD=${{matrix.platform}}_${{matrix.release}}
 
           TIME=$(date -d @${SECONDS} +%M:%S)
           echo TIME=${TIME} >> ${GITHUB_ENV}
@@ -215,7 +215,7 @@ jobs:
 
       - name: Upload firmware
         if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@master
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{env.TAG_NAME}}
           files: |
@@ -228,15 +228,7 @@ jobs:
           TG_MSG="Commit: ${GIT_HASH}\nBranch: ${GIT_BRANCH}\nTag: ${TAG_NAME}\nTime: ${TIME}\n\n"
           TG_ICON="\xE2\x9C\x85 GitHub Actions"
           TG_HEADER=$(echo -e ${TG_MSG}${TG_ICON})
-          HTTP=$(curl ${TG_OPTIONS} -H "Content-Type: multipart/form-data" -X POST https://api.telegram.org/bot${TG_TOKEN}/sendDocument -F chat_id=${TG_CHANNEL} -F caption="${TG_HEADER}" -F document=@${NORFW})
-          echo Telegram response: ${HTTP}
-
-      - name: Send error
-        if: github.event_name != 'pull_request' && failure()
-        run: |
-          TG_WARN="Error: ${{matrix.platform}}_${{matrix.release}}\n"
-          TG_MSG="Commit: ${GIT_HASH}\nBranch: ${GIT_BRANCH}\nTag: ${TAG_NAME}\n\n"
-          TG_ICON="\xE2\x9A\xA0 GitHub Actions"
-          TG_HEADER=$(echo -e ${TG_WARN}${TG_MSG}${TG_ICON})
-          HTTP=$(curl ${TG_OPTIONS} -H "Content-Type: multipart/form-data" -X POST https://api.telegram.org/bot${TG_TOKEN}/sendMessage -F chat_id=${TG_CHANNEL} -F text="${TG_HEADER}")
+          TG_TOKEN=${{secrets.TELEGRAM_TOKEN_BOT_OPENIPC}}
+          TG_CHANNEL=${{secrets.TELEGRAM_CHANNEL_OPENIPC_DEV}}
+          HTTP=$(curl -s -o /dev/null -w %{http_code} https://api.telegram.org/bot${TG_TOKEN}/sendDocument -F chat_id=${TG_CHANNEL} -F caption="${TG_HEADER}" -F document=@${NORFW})
           echo Telegram response: ${HTTP}
